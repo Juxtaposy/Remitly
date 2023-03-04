@@ -6,4 +6,5 @@
  *
  */
 module Remitly_App {
+	requires java.desktop;
 }
