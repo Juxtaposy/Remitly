@@ -4,8 +4,12 @@ import javax.swing.text.*;
 import javax.swing.event.*;
 
 import java.awt.Dimension;
-
+import java.awt.BorderLayout;
+import java.awt.GridBagLayout;
+import java.awt.Toolkit;
+import java.awt.GridBagConstraints;
 import java.awt.event.*;
+import javax.swing.ImageIcon;
 
 @SuppressWarnings("serial")
 public class MyDocumentEvent extends JPanel implements ActionListener
@@ -13,11 +17,11 @@ public class MyDocumentEvent extends JPanel implements ActionListener
 
 	JTextField textFieldFirst;
 	JTextField textFieldSecond;
-	JTextArea displayArea;
 	
 	public MyDocumentEvent()
 	{
-        
+
+
         textFieldFirst = new JTextField(20);
         textFieldFirst.getDocument().addDocumentListener(new MyDocumentListener());
         textFieldFirst.getDocument().putProperty("name", "Text Field First");
@@ -26,12 +30,17 @@ public class MyDocumentEvent extends JPanel implements ActionListener
         //textFieldSecond.getDocument().addDocumentListener(new MyDocumentListener());
         textFieldSecond.getDocument().putProperty("name", "Text Field Second");
         
-        
+        //Create some labels for textfields
+        JLabel label1 = new JLabel("British pound: ");
+        JLabel label2 = new JLabel("Polish złoty: ");
+        label1.setLabelFor(textFieldFirst);
+        label2.setLabelFor(textFieldSecond);
         add(textFieldFirst);
         add(textFieldSecond);
-
-        setPreferredSize(new Dimension(450, 250));
-        setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
+        
+        
+        setPreferredSize(new Dimension(300, 200));
+        setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
 	}
 	
 	class MyDocumentListener implements DocumentListener {
@@ -51,7 +60,6 @@ public class MyDocumentEvent extends JPanel implements ActionListener
 
         public void updateLog(DocumentEvent e) 
         {
-        	textFieldSecond.setText("Test");
             
         }
 
@@ -59,9 +67,7 @@ public class MyDocumentEvent extends JPanel implements ActionListener
 
 	
 	public void actionPerformed(ActionEvent e) {
-	     textFieldFirst.requestFocus();
-	     textFieldSecond.requestFocus();
-		 System.out.println("Action oerformed funcion:");
+		 
 	}
 
 }
