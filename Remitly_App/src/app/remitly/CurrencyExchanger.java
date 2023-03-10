@@ -1,4 +1,14 @@
 package app.remitly;
+/**
+ * Currency Exchanger App for calculating British Pound and Polish Złoty
+ * exchange rates. User can input integer values into either text field
+ * to instantly obtain recalculated value in other currency.
+ * 
+ * Rates are directly imported from NBP API (api.nbp.pl), if it is not 
+ * possible, constant rate of 6.0 is set. 
+ * 
+ * @author Mateusz Gawroński
+ */
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -11,12 +21,7 @@ import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.Scanner;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
@@ -24,7 +29,7 @@ import java.math.RoundingMode;
 public class CurrencyExchanger extends JPanel
 {
 	//Exchange rate for GBP/PLN from NBP API
-	private static double ex_rate;
+	private static double ex_rate = 6.0;
 
 	//Constants for Layout
 	final static boolean shouldFill = false;
@@ -46,7 +51,7 @@ public class CurrencyExchanger extends JPanel
 		//Get response code
 		int responseCode = conn.getResponseCode();
 				
-		//if not 200, connection failed - set defautl value
+		//if not 200, connection failed - set default value
 		if (responseCode != 200) {
 			ex_rate = 6.0;
 		}
@@ -161,7 +166,7 @@ public class CurrencyExchanger extends JPanel
 	        			textFieldFirst.setText(s);
 	        		}
 	        	}
-	        	else //If not text, then just update everything with blank text
+	        	else //If no text, then just update everything with blank text
 	        	{
 	        		textFieldFirst.setText(text);
 	        		textFieldSecond.setText(text);
@@ -302,7 +307,7 @@ public class CurrencyExchanger extends JPanel
 			frame.getContentPane().add(new CurrencyExchanger());
 			
 			//Set frame size
-			frame.setSize(400,250);
+			frame.setSize(250,150);
 			
 			//Set starting position of the frame
 			Toolkit kit = Toolkit.getDefaultToolkit();
