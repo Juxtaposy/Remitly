@@ -8,76 +8,74 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.DocumentFilter;
-import javax.swing.text.PlainDocument;
-
 import java.awt.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Scanner;
-import java.awt.event.*;
-import java.lang.reflect.Array;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 @SuppressWarnings("serial") //Because it's annoying
 public class CurrencyExchanger extends JPanel
 {
-
+	//Exchange rate for GBP/PLN from NBP API
 	private static double ex_rate;
 
-	
 	//Constants for Layout
 	final static boolean shouldFill = false;
     final static boolean shouldWeightX = true;
     final static boolean RIGHT_TO_LEFT = false;
     
 	
-	//Constructor to get current exchange rate from NBP API
+	//Constructor
 	public CurrencyExchanger()
 	{
 		//Connect to NBP API for exchange rates
-				try {
-				//Make connection
-				URL url = new URL("http://api.nbp.pl/api/exchangerates/rates/a/gbp/");
-				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-				conn.setRequestMethod("GET");
-				conn.connect();
+		try {
+		//Make connection
+		URL url = new URL("http://api.nbp.pl/api/exchangerates/rates/a/gbp/");
+		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+		conn.setRequestMethod("GET");
+		conn.connect();
 				
-				//Get response code
-				int responseCode = conn.getResponseCode();
+		//Get response code
+		int responseCode = conn.getResponseCode();
 				
-				//if not 200, connection failed
-				if (responseCode != 200) {
-					throw new RuntimeException("HttpResponseCode :" + responseCode);
-				}
-				//if 200, lets do a very cumbersome analysis of the data
-				else
-				{
-					//Build a new StringBuilder to save entire response
-					StringBuilder informationString = new StringBuilder();
-					Scanner scanner = new Scanner(url.openStream());
+		//if not 200, connection failed - set defautl value
+		if (responseCode != 200) {
+			ex_rate = 6.0;
+		}
+		//if 200, lets do a very cumbersome analysis of the data
+		else
+		{
+			//Build a new StringBuilder to save entire response
+			StringBuilder informationString = new StringBuilder();
+			Scanner scanner = new Scanner(url.openStream());
 					
-					//Add information to our String
-					while (scanner.hasNext()) {
-						informationString.append(scanner.nextLine());
-					}
-					//Close the file
-					scanner.close();
-					//Because I know exactly how the string looks like, I get what I want
-					//avoiding addition of custom libraries to handle JSON format 
+			//Add information to our String
+			while (scanner.hasNext()) {
+				informationString.append(scanner.nextLine());
+			}
+			//Close the file
+			scanner.close();
+			//Because I know exactly how the string looks like, I get what I want
+			//avoiding addition of custom libraries to handle JSON format 
 
-					//Update exchange rate for the day
-					ex_rate = Double.parseDouble(informationString.substring(121,127));
-				}
-
-				}
-				catch (Exception e) {
-					e.printStackTrace();
-				}
-				
+			//Update exchange rate for the day
+			ex_rate = Double.parseDouble(informationString.substring(121,127));
+		}
+		}
+		// Set default value for exchange rate if something goes wrong
+		catch (Exception e) {
+			ex_rate = 6.0;
+		}
+		
+		//Add two text fields for user to input values in
 		final JTextField textFieldFirst = new JTextField(10);
 		final JTextField textFieldSecond = new JTextField(10);
 				
@@ -92,24 +90,25 @@ public class CurrencyExchanger extends JPanel
         GridBagLayout gridbag = new GridBagLayout();
         GridBagConstraints c = new GridBagConstraints();
 		
+        //Set-up for layout construction - from oracle tutorial
         textControlsPane.setLayout(gridbag);
         JLabel[] labels = {textFieldLabel1,textFieldLabel2};
         JTextField[] textFields = {textFieldFirst, textFieldSecond};
         addLabelTextRows(labels, textFields, gridbag, textControlsPane);
 		
-        c.gridwidth = GridBagConstraints.REMAINDER; //last
+        //GridBagLayout handling
+        c.gridwidth = GridBagConstraints.REMAINDER; 
         c.anchor = GridBagConstraints.WEST;
         c.weightx = 1.0;
         textControlsPane.setBorder(
                 BorderFactory.createCompoundBorder(
                                 BorderFactory.createTitledBorder("GBP/PLN:       " + ex_rate),
                                 BorderFactory.createEmptyBorder(5,5,5,5)));
-        
-        JPanel leftPane = new JPanel(new BorderLayout());
-        leftPane.add(textControlsPane,BorderLayout.PAGE_START);
-        add(leftPane, BorderLayout.LINE_START);	
+        //Add to panel
+        JPanel Pane = new JPanel(new BorderLayout());
+        Pane.add(textControlsPane,BorderLayout.PAGE_START);
+        add(Pane, BorderLayout.LINE_START);	
 
-	
         final DocumentListener docListener = new DocumentListener() {
         
         	private Document doc;
@@ -172,16 +171,76 @@ public class CurrencyExchanger extends JPanel
         @Override
         public void insertString(FilterBypass fb, int off, String str, AttributeSet attr)
                 throws BadLocationException {
-        	//Keep digits and dot
-            fb.insertString(off, str.replaceAll("[^\\d.]", ""), attr);  
-
+        	//Keeps digits and only single dot - almost works
+        	
+            String[] strArr;
+            
+            if (str.indexOf(".") != -1)
+        	{//Has a decimal point
+        		if (str.indexOf(".") == 0) { //If its first, remove it
+        			str = str.replaceFirst("[.]", "");
+        		}       	
+        		if (str.length() > 0) {
+        			//Split the string
+        			strArr = str.split("[.]:",-1);
+        			//Get the value before dot
+        			if (strArr.length > 1)
+        			{
+        			str = strArr[0] + ".";
+        			//Add the rest
+        			for (int i = 1;i<=strArr.length;i++)
+        				{
+        					str = str + strArr[i];
+        				}
+        			}
+        			else
+        			{
+        				str = strArr[0];
+        			}
+        		}
+        		
+        	 }
+        		//Final result of str
+        		str = str.replaceAll("[^\\d.]", "");
+    			fb.insertString(off, str, attr); 
         }
 
         @Override
         public void replace(FilterBypass fb, int off, int len, String str, AttributeSet attr)
                 throws BadLocationException {
-        	//Keep digits and dot
-            fb.replace(off, len,  str.replaceAll("[^\\d.]", ""), attr);
+        	//Keeps digits and only single dot - almost works
+        	
+            String[] strArr;
+            
+            if (str.indexOf(".") != -1)
+        	{//Has a decimal point
+        		if (str.indexOf(".") == 0) { //If its first, remove it
+        			str = str.replaceFirst("[.]", "");
+
+        		}       	
+        		if (str.length() > 0) {
+        			//Split the string
+        			strArr = str.split("[.]:",-1);
+        			//Get the value before dot
+        			if (strArr.length > 1)
+        			{
+        			str = strArr[0] + ".";
+        			//Add the rest
+        			for (int i = 1;i<=strArr.length;i++)
+        				{
+        					str = str + strArr[i];
+        				}
+        			}
+        			else
+        			{
+        				str = strArr[0];
+        			}
+        		}
+        		
+        	 }
+        		//Final result of str
+        		str = str.replaceAll("[^\\d.]", "");
+                fb.replace(off, len,  str, attr); 
 
         }
     };
@@ -207,7 +266,7 @@ public class CurrencyExchanger extends JPanel
 		
 	}*/	
 	
-	//Round methods for nicer values
+	//Round method for nicer values
 	public static double round(double value, int places) {
 	    if (places < 0) throw new IllegalArgumentException();
 	    
@@ -260,6 +319,7 @@ public class CurrencyExchanger extends JPanel
 
 			//Display the frame
 			frame.setVisible(true);	
+			
 	   }
 
 }
