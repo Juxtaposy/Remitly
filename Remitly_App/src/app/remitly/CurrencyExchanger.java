@@ -42,39 +42,40 @@ public class CurrencyExchanger extends JPanel
 	{
 		//Connect to NBP API for exchange rates
 		try {
-		//Make connection
-		URL url = new URL("http://api.nbp.pl/api/exchangerates/rates/a/gbp/");
-		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-		conn.setRequestMethod("GET");
-		conn.connect();
+			//Make connection
+			URL url = new URL("http://api.nbp.pl/api/exchangerates/rates/a/gbp/");
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("GET");
+			conn.connect();
 				
-		//Get response code
-		int responseCode = conn.getResponseCode();
+			//Get response code
+			int responseCode = conn.getResponseCode();
 				
-		//if not 200, connection failed - set default value
-		if (responseCode != 200) {
-			ex_rate = 6.0;
-		}
-		//if 200, lets do a very cumbersome analysis of the data
-		else
-		{
-			//Build a new StringBuilder to save entire response
-			StringBuilder informationString = new StringBuilder();
-			Scanner scanner = new Scanner(url.openStream());
+			//if not 200, connection failed - set default value
+				if (responseCode != 200) {
+					ex_rate = 6.0;
+				}
+				//if 200, lets do a very cumbersome analysis of the data
+				else
+				{
+					//Build a new StringBuilder to save entire response
+					StringBuilder informationString = new StringBuilder();
+					Scanner scanner = new Scanner(url.openStream());
 					
-			//Add information to our String
-			while (scanner.hasNext()) {
-				informationString.append(scanner.nextLine());
-			}
-			//Close the file
-			scanner.close();
-			//Because I know exactly how the string looks like, I get what I want
-			//avoiding addition of custom libraries to handle JSON format 
+					//Add information to our String
+					while (scanner.hasNext()) {
+						informationString.append(scanner.nextLine());
+					}
+					//Close the file
+					scanner.close();
+					//Because I know exactly how the string looks like, I get what I want
+					//avoiding addition of custom libraries to handle JSON format 
 
-			//Update exchange rate for the day
-			ex_rate = Double.parseDouble(informationString.substring(121,127));
+					//Update exchange rate for the day
+					ex_rate = Double.parseDouble(informationString.substring(121,127));
+				}
 		}
-		}
+		
 		// Set default value for exchange rate if something goes wrong
 		catch (Exception e) {
 			ex_rate = 6.0;
@@ -146,27 +147,61 @@ public class CurrencyExchanger extends JPanel
 	        		}
 	        	//If we have some text typed then
 	        	if (!text.isEmpty()) {
-	        		//Convert it to double
+	        		//Check for extra digits
+	        		String[] strArr;
+	                if (text.indexOf(".") != -1)
+	            	{//Has a decimal point somewhere. If its first in string, remove it
+	            		if (text.indexOf(".") == 0) { 
+	            			text = text.replaceFirst("[.]", "");
+	            		}//Lets continue if text still has some characters in it      	
+	            		if (text.length() > 0) {
+	            			//Split the string with '.' delimiter
+	            			strArr = text.split("[.]",-1);
+	            			//If there were multiple delimiters then build string
+	            			if (strArr.length >= 2)
+	            			{
+	            				//Get first part and add delimiter
+	            				text = strArr[0] + ".";
+	            			//Add the rest of the string array
+	            			for (int i = 1;i<strArr.length;i++)
+	            				{
+	            				text = text + strArr[i];
+	            				}
+	            			}
+	            			//If only one String in array, just use it as final variable
+	            			else
+	            			{
+	            				text = strArr[0];
+	            			}
+	            		}
+	            		//If text is empty, then set it to "0" to avoid errors
+	            		else
+	            		{
+	            			text = "0";
+	            		}
+	            		
+	            	 }
+	        		//Convert String to double
 	        		final double p = Double.parseDouble(text);
-	        		//Check if field First triggered
+	        		//Check if field First triggered event
 	        		if (doc.equals(textFieldFirst.getDocument())) {
-	        			//Calculate exchange rate and round it to two digits
+	        			//Calculate exchange rate and round it to two digits after delimiter
 	        			final double d = round(p*ex_rate,2);
 	        			final String s = String.valueOf(d);
 	        			//Update other text field with string converted value
 	        			textFieldSecond.setText(s);
 	        		}
-	        		//Check if field Second triggered
+	        		//Check if field Second triggered event
 	        		else if (doc.equals(textFieldSecond.getDocument()))
 	        		{
-	        			//Calculate exchange rate and round it to two digits
+	        			//Calculate exchange rate and round it to two digits after delimiter
 	        			final double d = round(p/ex_rate,2);
 	        			final String s = String.valueOf(d);
 	        			//Update other text field with string converted value
 	        			textFieldFirst.setText(s);
 	        		}
 	        	}
-	        	else //If no text, then just update everything with blank text
+	        	else //If there is no text, then just update everything with blank text
 	        	{
 	        		textFieldFirst.setText(text);
 	        		textFieldSecond.setText(text);
@@ -188,36 +223,7 @@ public class CurrencyExchanger extends JPanel
         @Override
         public void insertString(FilterBypass fb, int off, String str, AttributeSet attr)
                 throws BadLocationException {
-        	//Keeps digits and only single dot - almost works
-        	
-            String[] strArr;
-            
-            if (str.indexOf(".") != -1)
-        	{//Has a decimal point
-        		if (str.indexOf(".") == 0) { //If its first, remove it
-        			str = str.replaceFirst("[.]", "");
-        		}       	
-        		if (str.length() > 0) {
-        			//Split the string
-        			strArr = str.split("[.]:",-1);
-        			//Get the value before dot
-        			if (strArr.length > 1)
-        			{
-        			str = strArr[0] + ".";
-        			//Add the rest
-        			for (int i = 1;i<=strArr.length;i++)
-        				{
-        					str = str + strArr[i];
-        				}
-        			}
-        			else
-        			{
-        				str = strArr[0];
-        			}
-        		}
-        		
-        	 }
-        		//Final result of str
+        	//Keeps digits and dots only and calls insertion
         		str = str.replaceAll("[^\\d.]", "");
     			fb.insertString(off, str, attr); 
         }
@@ -225,37 +231,7 @@ public class CurrencyExchanger extends JPanel
         @Override
         public void replace(FilterBypass fb, int off, int len, String str, AttributeSet attr)
                 throws BadLocationException {
-        	//Keeps digits and only single dot - almost works
-        	
-            String[] strArr;
-            
-            if (str.indexOf(".") != -1)
-        	{//Has a decimal point
-        		if (str.indexOf(".") == 0) { //If its first, remove it
-        			str = str.replaceFirst("[.]", "");
-
-        		}       	
-        		if (str.length() > 0) {
-        			//Split the string
-        			strArr = str.split("[.]:",-1);
-        			//Get the value before dot
-        			if (strArr.length > 1)
-        			{
-        			str = strArr[0] + ".";
-        			//Add the rest
-        			for (int i = 1;i<=strArr.length;i++)
-        				{
-        					str = str + strArr[i];
-        				}
-        			}
-        			else
-        			{
-        				str = strArr[0];
-        			}
-        		}
-        		
-        	 }
-        		//Final result of str
+        	//Keeps digits and dots only and calls replacement
         		str = str.replaceAll("[^\\d.]", "");
                 fb.replace(off, len,  str, attr); 
 
@@ -274,6 +250,7 @@ public class CurrencyExchanger extends JPanel
 	    //BigDecimal is safer
 	    BigDecimal bd = BigDecimal.valueOf(value);
 	    bd = bd.setScale(places, RoundingMode.HALF_UP);
+	    //Return double
 	    return bd.doubleValue();
 	}
 	
@@ -281,6 +258,7 @@ public class CurrencyExchanger extends JPanel
 	private void addLabelTextRows(JLabel[] labels, JTextField[] textFields, 
 			GridBagLayout gridbag, Container container) 
 	{
+			//Some layout magic
 			GridBagConstraints c = new GridBagConstraints();
 			c.anchor = GridBagConstraints.EAST;
 			int numLabels = labels.length;
