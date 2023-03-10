@@ -108,54 +108,65 @@ public class CurrencyExchanger extends JPanel
         JPanel Pane = new JPanel(new BorderLayout());
         Pane.add(textControlsPane,BorderLayout.PAGE_START);
         add(Pane, BorderLayout.LINE_START);	
-
-        final DocumentListener docListener = new DocumentListener() {
         
+        //Document listener declaration
+        final DocumentListener docListener = new DocumentListener() {
+        	//Field for later
         	private Document doc;
         	
+        	//Required methods, updateLog is most critical
 	        public void insertUpdate(DocumentEvent e) {
 	            updateLog(e);
 	        }
 	        public void removeUpdate(DocumentEvent e) {
 	            updateLog(e);
 	        }
+
 	        public void changedUpdate(DocumentEvent e) {
-	            //updateLog(e);
+	            updateLog(e);
 	        }
-	
+	        
+	        //Update function
 	        private void updateLog(DocumentEvent e) {
+	        	//Set up Document doc variable
 	        	if (null == doc) {
 	        		doc = e.getDocument();
 	        		String text = "";
-	        	
+	        		//If we can get text
 	        		try {
 	        			text = doc.getText(0, doc.getLength());
-	        		}		
+	        		}//If we can't
 	        		catch (final Exception ex) {
 	        		ex.printStackTrace();
 	        		}
-	        	
+	        	//If we have some text typed then
 	        	if (!text.isEmpty()) {
+	        		//Convert it to double
 	        		final double p = Double.parseDouble(text);
-	        		
+	        		//Check if field First triggered
 	        		if (doc.equals(textFieldFirst.getDocument())) {
+	        			//Calculate exchange rate and round it to two digits
 	        			final double d = round(p*ex_rate,2);
 	        			final String s = String.valueOf(d);
+	        			//Update other text field with string converted value
 	        			textFieldSecond.setText(s);
 	        		}
-	        		
+	        		//Check if field Second triggered
 	        		else if (doc.equals(textFieldSecond.getDocument()))
 	        		{
+	        			//Calculate exchange rate and round it to two digits
 	        			final double d = round(p/ex_rate,2);
 	        			final String s = String.valueOf(d);
+	        			//Update other text field with string converted value
 	        			textFieldFirst.setText(s);
 	        		}
 	        	}
-	        	else
+	        	else //If not text, then just update everything with blank text
 	        	{
 	        		textFieldFirst.setText(text);
 	        		textFieldSecond.setText(text);
 	        	}
+	        	//Nullify our doc for proper event handling
 	        	doc = null;
 	        	}
         	
@@ -163,10 +174,11 @@ public class CurrencyExchanger extends JPanel
         
         };
 	
-	
+	//Add listeners to fields so we can actually monitor changes
 	textFieldFirst.getDocument().addDocumentListener(docListener);
 	textFieldSecond.getDocument().addDocumentListener(docListener);
-
+	
+	//New Document filter to allow only digits and '.' - not working 100%
 	final DocumentFilter docFilter = new DocumentFilter(){
         @Override
         public void insertString(FilterBypass fb, int off, String str, AttributeSet attr)
@@ -244,27 +256,11 @@ public class CurrencyExchanger extends JPanel
 
         }
     };
+    //Setting document filter for both fields
     ((AbstractDocument) textFieldFirst.getDocument()).setDocumentFilter(docFilter);
     ((AbstractDocument) textFieldSecond.getDocument()).setDocumentFilter(docFilter);
 
 }	
-	//Method to draw simple text next to TextPanels (old)
-	/*public void paint(Graphics g) {
-		//Get images of flags
-		Image image_brit = Toolkit.getDefaultToolkit().getImage("british.jpg");
-		Image image_pol = Toolkit.getDefaultToolkit().getImage("polish.jpg");
-		
-		//Draw images with positions
-		g.drawImage(image_brit,30,30,this);
-		g.drawImage(image_pol,30,80,this);
-		//Draw some basic Strings
-		g.drawString("Exchange rate PLN/GBP: ", 30, 180);
-		g.drawString("as of " + date.toString(),30,200);
-		//Bold font for exchange rate
-		g.setFont(new Font("default", Font.BOLD, 16));
-		g.drawString(String.valueOf(ex_rate), 200, 180);
-		
-	}*/	
 	
 	//Round method for nicer values
 	public static double round(double value, int places) {
